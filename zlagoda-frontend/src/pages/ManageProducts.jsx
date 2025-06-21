@@ -374,7 +374,7 @@ export default function ManageProducts() {
                     />
                   </div>
                   <div className="mb-2">
-                    <label className="block text-gray-700 mb-1">Ціна продажу (з ПДВ)</label>
+                    <label className="block text-gray-700 mb-1">Ціна продажу </label>
                     <input
                       type="number"
                       min="0"
@@ -438,7 +438,7 @@ export default function ManageProducts() {
                     <th className="p-2">Тип товару</th>
                     <th className="p-2">Категорія</th>
                     <th className="p-2">UPC</th>
-                    <th className="p-2">Ціна (з ПДВ)</th>
+                    <th className="p-2">Ціна </th>
                     <th className="p-2">Кількість</th>
                     <th className="p-2">Акційний</th>
                     {isManager && <th className="p-2">Дії</th>}

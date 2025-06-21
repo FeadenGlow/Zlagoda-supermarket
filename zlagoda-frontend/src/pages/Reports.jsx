@@ -435,7 +435,7 @@ export default function Reports() {
                 <th>UPC</th>
                 <th>Назва</th>
                 <th>Категорія</th>
-                <th>Ціна (з ПДВ)</th>
+                <th>Ціна</th>
                 <th>Кількість</th>
                 <th>Акційний</th>
               </tr>
@@ -446,7 +446,7 @@ export default function Reports() {
                   <td>{it.upc}</td>
                   <td>{it.productName || it.name}</td>
                   <td>{it.categoryName}</td>
-                  <td>{Number(it.salePrice).toFixed(2)}</td>
+                  <td>{it.isPromotional ? Number(it.salePrice).toFixed(2)*0.8 : Number(it.salePrice).toFixed(2)}</td>
                   <td>{it.quantity}</td>
                   <td>{it.isPromotional ? 'Так' : 'Ні'}</td>
                 </tr>
