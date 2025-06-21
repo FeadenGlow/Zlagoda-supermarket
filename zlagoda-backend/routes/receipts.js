@@ -16,7 +16,7 @@ const router = express.Router();
 router.post('/', authenticateToken, authorizeRoles('cashier'), async (req, res) => {
   try {
     const cashierId = req.user.id;
-    const { items } = req.body;
+    const { items, cardNumber } = req.body;
     if (!Array.isArray(items) || items.length === 0) {
       return res.status(400).json({ message: 'Потрібно вказати товари' });
     }
@@ -37,11 +37,11 @@ router.post('/', authenticateToken, authorizeRoles('cashier'), async (req, res) 
       await updateProductQuantityInStore(item.upc, newQty);
 
       if (storeItem.isPromotional) {
-        item.price = +( item.price * 0.8).toFixed(2);
+        item.price = +(item.price * 0.8).toFixed(2);
       }
     }
 
-    const receipt = await createReceipt({ cashierId, items});
+    const receipt = await createReceipt({ cashierId, items, cardNumber });
     res.status(201).json(receipt);
   } catch (err) {
     console.error(err);

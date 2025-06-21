@@ -10,26 +10,30 @@ export default function Sales() {
 
   const [receipts, setReceipts] = useState([]);
   const [loading, setLoading] = useState(true);
-  // Загальні помилки (наприклад, помилка завантаження списку)
   const [error, setError] = useState(null);
-  // Фільтри, додано receiptId
   const [filters, setFilters] = useState({ cashierId: '', startDate: '', endDate: '', receiptId: '' });
   const [selectedReceipt, setSelectedReceipt] = useState(null);
   const [storeItems, setStoreItems] = useState([]);
   const [cashiers, setCashiers] = useState([]);
+  const [customers, setCustomers] = useState([]); // список клієнтів/карт
   const [selectedProductUpc, setSelectedProductUpc] = useState('');
   const [totalQty, setTotalQty] = useState(null);
-  // Новий стан: чи не знайдено чек при пошуку по ID
   const [receiptNotFound, setReceiptNotFound] = useState(false);
 
   // Для створення чека
-  const [newItems, setNewItems] = useState([]); // [{ upc, quantity, price, productName }]
+  const [newItems, setNewItems] = useState([]);
+  const [selectedCustomerCard, setSelectedCustomerCard] = useState(''); // номер карти або '' якщо без карти
 
   useEffect(() => {
     fetchReceipts();
-    if (isCashier) fetchStoreItems();
-    if (isManager) fetchCashiers();
-    if (isManager) fetchStoreItems();
+    if (isCashier) {
+      fetchStoreItems();
+      fetchCustomers();
+    }
+    if (isManager) {
+      fetchCashiers();
+      fetchStoreItems();
+    }
     // eslint-disable-next-line
   }, []);
 
@@ -48,6 +52,15 @@ export default function Sales() {
     }
   };
 
+  const fetchCustomers = async () => {
+    try {
+      const res = await axios.get('/api/customers');
+      setCustomers(res.data);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   const fetchReceipts = async () => {
     setLoading(true);
     setError(null);
@@ -56,22 +69,18 @@ export default function Sales() {
 
     const { receiptId, startDate, endDate, cashierId } = filters;
 
-    // Якщо введено номер чеку — шукаємо конкретний чек
     if (receiptId) {
       try {
         const res = await axios.get(`/api/receipts/${receiptId}`);
         const receipt = res.data;
         setReceipts([receipt]);
         setSelectedReceipt(receipt);
-        // receiptNotFound залишається false
       } catch (err) {
         console.error(err);
-        // При 404 або подібному
         if (err.response && err.response.status === 404) {
           setReceipts([]);
           setReceiptNotFound(true);
         } else {
-          // Інша помилка
           setReceipts([]);
           setError('Помилка під час пошуку чеку');
         }
@@ -81,7 +90,6 @@ export default function Sales() {
       return;
     }
 
-    // Якщо receiptId пустий — звичайне завантаження списку за іншими фільтрами
     try {
       const params = {};
       if (startDate) params.startDate = startDate;
@@ -136,9 +144,14 @@ export default function Sales() {
     if (!isCashier) return;
     if (newItems.length === 0) { alert('Додайте товари'); return; }
     const itemsPayload = newItems.map(it => ({ upc: it.upc, quantity: parseInt(it.quantity, 10), price: it.price }));
+    const payload = { items: itemsPayload };
+    if (selectedCustomerCard) {
+      payload.cardNumber = selectedCustomerCard;
+    }
     try {
-      await axios.post('/api/receipts', { items: itemsPayload });
+      await axios.post('/api/receipts', payload);
       setNewItems([]);
+      setSelectedCustomerCard('');
       fetchReceipts();
       alert('Чек створено');
     } catch (err) {
@@ -151,7 +164,6 @@ export default function Sales() {
     try {
       const res = await axios.get(`/api/receipts/${id}`);
       setSelectedReceipt(res.data);
-      // При бажанні: оновити filters.receiptId, але тут необов’язково
     } catch (err) {
       console.error(err);
       alert('Не вдалось завантажити чек');
@@ -172,7 +184,6 @@ export default function Sales() {
     }
   };
 
-  // Підрахунок загальної суми (з ПДВ) відображених чеків
   const totalOfFiltered = useMemo(() => {
     return receipts.reduce((sum, r) => {
       const total = parseFloat(r.total) || 0;
@@ -181,7 +192,6 @@ export default function Sales() {
     }, 0);
   }, [receipts]);
 
-  // Підрахунок кількості вибраного товару через бекенд аналітику
   useEffect(() => {
     const fetchQty = async () => {
       if (!selectedProductUpc) {
@@ -202,20 +212,33 @@ export default function Sales() {
     fetchQty();
   }, [selectedProductUpc, filters, receipts]);
 
-  // Верхні повернення: лиш loading. Загальні error не повертають весь UI.
   if (loading) return <p>Завантаження...</p>;
 
   return (
     <div className="p-6">
       <h2 className="text-2xl mb-4">Чеки</h2>
 
-      {/* Якщо є загальна помилка (не пов’язана з “чек не знайдено”), показуємо зверху */}
       {error && <p className="text-red-600 mb-4">{error}</p>}
 
-      {/* Створення чека: лише касир */}
       {isCashier && (
         <div className="mb-6 bg-white p-4 rounded shadow">
           <h3 className="mb-2">Створити новий чек</h3>
+          {/* Вибір клієнтської карти (необов'язково) */}
+          <div className="mb-2">
+            <label className="block mb-1">Карта клієнта (необов'язково)</label>
+            <select
+              className="w-full border rounded p-2"
+              value={selectedCustomerCard}
+              onChange={e => setSelectedCustomerCard(e.target.value)}
+            >
+              <option value="">Без карти</option>
+              {customers.map(c => (
+                <option key={c.cardNumber} value={c.cardNumber}>
+                  {c.cardNumber} - {c.fullName}
+                </option>
+              ))}
+            </select>
+          </div>
           {newItems.map((row, idx) => (
             <div key={idx} className="flex items-end gap-2 mb-2">
               <select
@@ -245,14 +268,12 @@ export default function Sales() {
         </div>
       )}
 
-      {/* Фільтри */}
       {isManager && (
         <>
           <div className="mb-4">
             <p className="font-semibold">Загальна сума всіх відображених чеків (з ПДВ): {totalOfFiltered.toFixed(2)}</p>
           </div>
           <div className="mb-4 bg-white p-4 rounded shadow grid grid-cols-1 sm:grid-cols-4 gap-4">
-            {/* Поле для пошуку за номером чеку */}
             <div>
               <label className="block mb-1">Номер чеку</label>
               <input
@@ -300,7 +321,6 @@ export default function Sales() {
                 disabled={!!filters.receiptId}
               />
             </div>
-            {/* Кнопка очищення пошуку по ID */}
             {filters.receiptId && (
               <div className="flex items-end">
                 <button
@@ -320,11 +340,9 @@ export default function Sales() {
         </>
       )}
 
-      {/* Якщо шукаємо по ID і не знайдено, показуємо текст замість таблиці */}
       {filters.receiptId && receiptNotFound ? (
         <p className="text-gray-700">Чек з ID {filters.receiptId} не знайдено</p>
       ) : (
-        // Список чеків
         <table className="w-full bg-white shadow rounded mb-4">
           <thead>
             <tr>
@@ -364,7 +382,6 @@ export default function Sales() {
         </table>
       )}
 
-      {/* Деталі */}
       {selectedReceipt && (
         <div className="bg-white p-4 rounded shadow">
           <h3 className="text-xl mb-2">Чек {selectedReceipt.id}</h3>
@@ -373,6 +390,12 @@ export default function Sales() {
           <p>Сума: {Number(selectedReceipt.total).toFixed(2)}</p>
           <p>ПДВ: {Number(selectedReceipt.vat).toFixed(2)}</p>
           <p>Загальна (з ПДВ): {(Number(selectedReceipt.total) + Number(selectedReceipt.vat)).toFixed(2)}</p>
+          {/* Інформація про клієнтську карту */}
+          {selectedReceipt.card_number ? (
+            <p>Клієнтська карта: {selectedReceipt.card_number}</p>
+          ) : (
+            <p>Клієнтська карта: не використовувалась</p>
+          )}
           <h4 className="mt-4 font-semibold">Товари</h4>
           <table className="w-full bg-white shadow rounded">
             <thead>

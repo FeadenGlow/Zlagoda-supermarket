@@ -329,35 +329,106 @@ export default function ManageProducts() {
                   </div>
                 </div>
               </div>
-              {/* Form for items */}
               {isManager && (
-                <form onSubmit={handleItemSubmit} className="mb-6 bg-white p-4 rounded shadow">
-                  <h3 className="mb-2">{itemForm.id ? 'Редагувати товар у магазині' : 'Додати товар у магазині'}</h3>
+                <form
+                  onSubmit={handleItemSubmit}
+                  className="mb-6 bg-white p-4 rounded shadow"
+                  autoComplete="off"
+                >
+                  <h3 className="mb-2">
+                    {itemForm.id ? 'Редагувати товар у магазині' : 'Додати товар у магазині'}
+                  </h3>
                   <div className="mb-2">
                     <label className="block text-gray-700 mb-1">Тип продукту</label>
-                    <select className="w-full border rounded p-2" value={itemForm.productTypeId} onChange={e=>setItemForm({...itemForm,productTypeId:e.target.value})} required>
+                    <select
+                      className="w-full border rounded p-2"
+                      value={itemForm.productTypeId}
+                      onChange={e => setItemForm({ ...itemForm, productTypeId: e.target.value })}
+                      required
+                    >
                       <option value="">Виберіть тип товару</option>
-                      {types.map(t=><option key={t.id} value={t.id}>{t.name}</option>)}
+                      {types.map(t => (
+                        <option key={t.id} value={t.id}>
+                          {t.name}
+                        </option>
+                      ))}
                     </select>
                   </div>
                   <div className="mb-2">
                     <label className="block text-gray-700 mb-1">UPC</label>
-                    <input type="text" className="w-full border rounded p-2" value={itemForm.upc} onChange={e=>setItemForm({...itemForm,upc:e.target.value})} required disabled={!!itemForm.id} />
+                    <input
+                      type="text"
+                      className="w-full border rounded p-2"
+                      value={itemForm.upc}
+                      onChange={e => {
+                        const val = e.target.value.replace(/\D/g, '').slice(0, 6);
+                        setItemForm({ ...itemForm, upc: val });
+                      }}
+                      required
+                      disabled={!!itemForm.id}
+                      pattern="\d{6}"
+                      maxLength={6}
+                      inputMode="numeric"
+                      title="UPC має складатися з 6 цифр"
+                      placeholder="6 цифр"
+                    />
                   </div>
                   <div className="mb-2">
                     <label className="block text-gray-700 mb-1">Ціна продажу (з ПДВ)</label>
-                    <input type="number" min="0" step="0.01" className="w-full border rounded p-2" value={itemForm.salePrice} onChange={e=>setItemForm({...itemForm,salePrice:e.target.value})} required />
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      className="w-full border rounded p-2"
+                      value={itemForm.salePrice}
+                      onChange={e => setItemForm({ ...itemForm, salePrice: e.target.value })}
+                      required
+                    />
                   </div>
                   <div className="mb-2">
                     <label className="block text-gray-700 mb-1">Кількість</label>
-                    <input type="number" min="0" className="w-full border rounded p-2" value={itemForm.quantity} onChange={e=>setItemForm({...itemForm,quantity:e.target.value})} required />
+                    <input
+                      type="number"
+                      min="0"
+                      className="w-full border rounded p-2"
+                      value={itemForm.quantity}
+                      onChange={e => setItemForm({ ...itemForm, quantity: e.target.value })}
+                      required
+                    />
                   </div>
                   <div className="mb-2 flex items-center">
-                    <input type="checkbox" checked={itemForm.isPromotional} onChange={e=>setItemForm({...itemForm,isPromotional:e.target.checked})} className="mr-2" />
+                    <input
+                      type="checkbox"
+                      checked={itemForm.isPromotional}
+                      onChange={e => setItemForm({ ...itemForm, isPromotional: e.target.checked })}
+                      className="mr-2"
+                    />
                     <label className="text-gray-700">Акційний</label>
                   </div>
-                  <button type="submit" className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">{itemForm.id?'Оновити':'Додати'}</button>
-                  {itemForm.id && <button type="button" onClick={()=>setItemForm({id:null,productTypeId:'',upc:'',salePrice:'',quantity:'',isPromotional:false})} className="ml-2 bg-gray-300 text-gray-700 px-3 py-2 rounded hover:bg-gray-400">Скасувати</button>}
+                  <button
+                    type="submit"
+                    className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+                  >
+                    {itemForm.id ? 'Оновити' : 'Додати'}
+                  </button>
+                  {itemForm.id && (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setItemForm({
+                          id: null,
+                          productTypeId: '',
+                          upc: '',
+                          salePrice: '',
+                          quantity: '',
+                          isPromotional: false,
+                        })
+                      }
+                      className="ml-2 bg-gray-300 text-gray-700 px-3 py-2 rounded hover:bg-gray-400"
+                    >
+                      Скасувати
+                    </button>
+                  )}
                 </form>
               )}
               {/* Table items */}

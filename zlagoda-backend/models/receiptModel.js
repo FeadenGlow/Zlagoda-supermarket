@@ -1,8 +1,9 @@
 import pool from '../config/db.js';
+import { findCardByNumber } from './customerModel.js';
 
 export async function getReceiptById(id) {
   const res = await pool.query(
-    `SELECT r.id, r.cashier_id AS "cashierId", r.date, r.total, r.vat, u.name AS "cashierName"
+    `SELECT r.id, r.cashier_id AS "cashierId", r.date, r.total, r.vat, r.card_number, u.name AS "cashierName"
      FROM receipts r
      JOIN users u ON r.cashier_id = u.id
      WHERE r.id = $1`,
@@ -23,7 +24,7 @@ export async function getReceiptById(id) {
 }
 
 export async function getReceipts({ cashierId, startDate, endDate }) {
-  let query = `SELECT r.id, r.cashier_id AS "cashierId", u.name AS "cashierName", r.date, r.total, r.vat
+  let query = `SELECT r.id, r.cashier_id AS "cashierId", u.name AS "cashierName", r.date, r.total, r.vat, r.card_number
                FROM receipts r JOIN users u ON r.cashier_id = u.id`;
   const conditions = [];
   const params = [];
@@ -46,18 +47,28 @@ export async function getReceipts({ cashierId, startDate, endDate }) {
   return res.rows;
 }
 
-export async function createReceipt({ cashierId, items }) {
+export async function createReceipt({ cashierId, items, cardNumber }) {
   let total = 0;
   items.forEach(it => {
     total += parseFloat(it.price) * parseInt(it.quantity, 10);
   });
-  const vat = total * 0.2;
+  let vat = total * 0.2;
+  let discount = 0;
+
+  if (cardNumber) {
+    const card = await findCardByNumber(cardNumber);
+    if (card && card.discount) {
+      discount = parseFloat(card.discount) || 0;
+      vat = vat - (vat * discount / 100);
+    }
+  }
+
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
     const res = await client.query(
-      `INSERT INTO receipts (cashier_id, date, total, vat) VALUES ($1, NOW(), $2, $3) RETURNING id, date, total, vat`,
-      [cashierId, total, vat]
+      `INSERT INTO receipts (cashier_id, date, total, vat, card_number) VALUES ($1, NOW(), $2, $3, $4) RETURNING id, date, total, vat, card_number`,
+      [cashierId, total, vat, cardNumber || null]
     );
     const receipt = res.rows[0];
     for (const it of items) {

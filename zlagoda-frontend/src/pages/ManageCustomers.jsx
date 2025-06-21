@@ -151,7 +151,6 @@ export default function ManageCustomers() {
           </div>
         </div>
       </div>
-      {/* Форма */}
       <form onSubmit={handleSubmit} className="mb-6 bg-white p-4 rounded shadow">
         <h3 className="mb-2">{isEditing ? 'Редагувати картку' : 'Додати картку'}</h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -162,78 +161,93 @@ export default function ManageCustomers() {
                 type="text"
                 className="w-full border rounded p-2"
                 value={formData.cardNumber}
-                onChange={e => setFormData({ ...formData, cardNumber: e.target.value })}
+                onChange={e => {
+                  let val = e.target.value.replace(/\D/g, '').slice(0, 8);
+                  setFormData({ ...formData, cardNumber: val });
+                }}
                 required
+                maxLength={8}
+                pattern="\d{8}"
+                placeholder="XXXXXXXX"
               />
+              <span className="text-gray-500 text-xs">8 цифр</span>
             </div>
           )}
           {/* Якщо редагування, номер незмінний */}
-          {isEditing && (
-            <div>
-              <label className="block text-gray-700 mb-1">Номер карти</label>
-              <input
-                type="text"
-                className="w-full border rounded p-2 bg-gray-100"
-                value={formData.cardNumber}
-                disabled
-              />
-            </div>
-          )}
-          <div>
-            <label className="block text-gray-700 mb-1">ПІБ власника</label>
-            <input
-              type="text"
-              className="w-full border rounded p-2"
-              value={formData.fullName}
-              onChange={e => setFormData({ ...formData, fullName: e.target.value })}
-              required
-            />
-          </div>
-          <div>
-            <label className="block text-gray-700 mb-1">Телефон</label>
-            <input
-              type="tel"
-              className="w-full border rounded p-2"
-              value={formData.phone}
-              onChange={e => setFormData({ ...formData, phone: e.target.value })}
-              required
-            />
-          </div>
-          <div className="sm:col-span-2">
-            <label className="block text-gray-700 mb-1">Адреса</label>
-            <input
-              type="text"
-              className="w-full border rounded p-2"
-              value={formData.address}
-              onChange={e => setFormData({ ...formData, address: e.target.value })}
-              required
-            />
-          </div>
-          <div>
-            <label className="block text-gray-700 mb-1">Знижка (%)</label>
-            <input
-              type="number"
-              min="0"
-              max="100"
-              step="0.01"
-              className="w-full border rounded p-2"
-              value={formData.discount}
-              onChange={e => setFormData({ ...formData, discount: e.target.value })}
-              required
-            />
-          </div>
-        </div>
-        <div className="mt-4">
-          <button
-            type="submit"
-            className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
-          >
-            {isEditing ? 'Оновити' : 'Додати'}
-          </button>
-          {isEditing && (
-            <button
-              type="button"
-              onClick={() => {
+                {isEditing && (
+                <div>
+                  <label className="block text-gray-700 mb-1">Номер карти</label>
+                  <input
+                  type="text"
+                  className="w-full border rounded p-2 bg-gray-100"
+                  value={formData.cardNumber}
+                  disabled
+                  />
+                </div>
+                )}
+                <div>
+                <label className="block text-gray-700 mb-1">ПІБ власника</label>
+                <input
+                  type="text"
+                  className="w-full border rounded p-2"
+                  value={formData.fullName}
+                  onChange={e => setFormData({ ...formData, fullName: e.target.value })}
+                  required
+                />
+                </div>
+                <div>
+                <label className="block text-gray-700 mb-1">Телефон</label>
+                <input
+                  type="tel"
+                  className="w-full border rounded p-2"
+                  value={formData.phone.replace(/^\+380/, '')}
+                  maxLength={9}
+                  pattern="\d{9}"
+                  onChange={e => {
+                  // Тільки цифри, максимум 9 символів
+                  let val = e.target.value.replace(/\D/g, '').slice(0, 9);
+                  setFormData({ ...formData, phone: '+380' + val });
+                  }}
+                  required
+                  placeholder="XXXXXXXXX"
+                />
+                <span className="text-gray-500 text-xs">+380 (код додається автоматично)</span>
+                </div>
+                <div className="sm:col-span-2">
+                <label className="block text-gray-700 mb-1">Адреса</label>
+                <input
+                  type="text"
+                  className="w-full border rounded p-2"
+                  value={formData.address}
+                  onChange={e => setFormData({ ...formData, address: e.target.value })}
+                  required
+                />
+                </div>
+                <div>
+                <label className="block text-gray-700 mb-1">Знижка (%)</label>
+                <input
+                  type="number"
+                  min="0"
+                  max="100"
+                  step="0.01"
+                  className="w-full border rounded p-2"
+                  value={formData.discount}
+                  onChange={e => setFormData({ ...formData, discount: e.target.value })}
+                  required
+                />
+                </div>
+              </div>
+              <div className="mt-4">
+                <button
+                type="submit"
+                className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+                >
+                {isEditing ? 'Оновити' : 'Додати'}
+                </button>
+                {isEditing && (
+                <button
+                  type="button"
+                  onClick={() => {
                 setFormData({ cardNumber: '', fullName: '', phone: '', address: '', discount: '' });
                 setIsEditing(false);
               }}
