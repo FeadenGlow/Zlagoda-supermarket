@@ -35,9 +35,13 @@ router.post('/', authenticateToken, authorizeRoles('cashier'), async (req, res) 
       const storeItem = await getStoreItemByUpc(item.upc);
       const newQty = storeItem.quantity - item.quantity;
       await updateProductQuantityInStore(item.upc, newQty);
+
+      if (storeItem.isPromotional) {
+        item.price = +( item.price * 0.8).toFixed(2);
+      }
     }
 
-    const receipt = await createReceipt({ cashierId, items });
+    const receipt = await createReceipt({ cashierId, items});
     res.status(201).json(receipt);
   } catch (err) {
     console.error(err);
