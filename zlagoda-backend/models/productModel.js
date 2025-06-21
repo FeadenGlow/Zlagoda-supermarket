@@ -22,6 +22,18 @@ export async function getProductById(id) {
   return res.rows[0];
 }
 
+export async function getProductsByCategoryId(categoryId) {
+  const res = await pool.query(`
+    SELECT p.id, p.name, p.manufacturer, p.characteristics,
+           p.category_id AS "categoryId", c.name AS "categoryName"
+    FROM products p
+    LEFT JOIN categories c ON p.category_id = c.id
+    WHERE p.category_id = $1
+    ORDER BY p.name
+  `, [categoryId]);
+  return res.rows;
+}
+
 export async function createProduct({ name, manufacturer, characteristics, categoryId }) {
   const res = await pool.query(
     `INSERT INTO products (name, manufacturer, characteristics, category_id)

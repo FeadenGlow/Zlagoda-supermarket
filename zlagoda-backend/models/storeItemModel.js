@@ -61,6 +61,17 @@ export async function updateStoreItem(upc, { productId, salePrice, quantity, isP
   return res.rows[0];
 }
 
+export async function updateProductQuantityInStore(upc, quantity) {
+  const res = await pool.query(
+    `UPDATE store_items
+     SET quantity = $1
+     WHERE upc = $2
+     RETURNING upc, quantity`,
+    [quantity, upc]
+  );
+  return res.rows[0];
+}
+
 export async function deleteStoreItem(upc) {
   await pool.query(`DELETE FROM store_items WHERE upc = $1`, [upc]);
 }

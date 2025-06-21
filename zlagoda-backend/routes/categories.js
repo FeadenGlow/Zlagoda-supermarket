@@ -1,6 +1,7 @@
 import express from 'express';
 import { authenticateToken } from '../middleware/auth.js';
 import { authorizeRoles } from '../middleware/authorize.js';
+import { getProductsByCategoryId } from '../models/productModel.js';
 import {
   getAllCategories,
   getCategoryById,
@@ -61,6 +62,13 @@ router.delete('/:id', authenticateToken, authorizeRoles('manager'), async (req, 
   try {
     const existing = await getCategoryById(req.params.id);
     if (!existing) return res.status(404).json({ message: 'Not found' });
+
+    // Check if there are products with this category
+    const products = await getProductsByCategoryId(req.params.id);
+    if (products && products.length > 0) {
+      return res.status(400).json({ message: 'Неможливо видалити категорію, оскільки існують продукти з цією категорією' });
+    }
+
     await deleteCategory(req.params.id);
     res.status(204).end();
   } catch (err) {

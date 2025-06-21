@@ -1,6 +1,7 @@
 import express from 'express';
 import { authenticateToken } from '../middleware/auth.js';
 import { authorizeRoles } from '../middleware/authorize.js';
+import { getStoreItemByUpc, updateProductQuantityInStore } from '../models/storeItemModel.js';
 import {
   createReceipt,
   deleteReceipt,
@@ -19,6 +20,23 @@ router.post('/', authenticateToken, authorizeRoles('cashier'), async (req, res) 
     if (!Array.isArray(items) || items.length === 0) {
       return res.status(400).json({ message: 'Потрібно вказати товари' });
     }
+
+    for (const item of items) {
+      const storeItem = await getStoreItemByUpc(item.upc);
+      if (!storeItem) {
+        return res.status(400).json({ message: `Товар з UPC ${item.upc} не знайдено` });
+      }
+      if (storeItem.quantity < item.quantity) {
+        return res.status(400).json({ message: `Недостатньо товару з UPC ${item.upc}` });
+      }
+    }
+
+    for (const item of items) {
+      const storeItem = await getStoreItemByUpc(item.upc);
+      const newQty = storeItem.quantity - item.quantity;
+      await updateProductQuantityInStore(item.upc, newQty);
+    }
+
     const receipt = await createReceipt({ cashierId, items });
     res.status(201).json(receipt);
   } catch (err) {
